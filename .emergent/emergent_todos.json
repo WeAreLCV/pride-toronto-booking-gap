@@ -1,0 +1,22 @@
+[
+  {
+    "content": "Update index.html: fonts + meta title",
+    "status": "completed"
+  },
+  {
+    "content": "Build App.js with editorial infographic layout (masthead, hero stat, split visual, identity breakdown, ethnicity bar, mission sidebar, footer, disclaimer)",
+    "status": "completed"
+  },
+  {
+    "content": "Build App.css with editorial dark-mode styling (brand colors, magazine typography, responsive breakpoints)",
+    "status": "completed"
+  },
+  {
+    "content": "Verify rendering via screenshots (desktop + mobile widths)",
+    "status": "completed"
+  },
+  {
+    "content": "End-to-end frontend testing via testing_agent_v3 (incl. responsive + link validation)",
+    "status": "in_progress"
+  }
+]
