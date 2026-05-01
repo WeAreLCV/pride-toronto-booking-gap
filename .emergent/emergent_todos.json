@@ -4,19 +4,19 @@
     "status": "completed"
   },
   {
-    "content": "Build App.js with editorial infographic layout (masthead, hero stat, split visual, identity breakdown, ethnicity bar, mission sidebar, footer, disclaimer)",
+    "content": "Build App.js with editorial infographic layout",
     "status": "completed"
   },
   {
-    "content": "Build App.css with editorial dark-mode styling (brand colors, magazine typography, responsive breakpoints)",
+    "content": "Build App.css with editorial dark-mode styling",
     "status": "completed"
   },
   {
-    "content": "Verify rendering via screenshots (desktop + mobile widths)",
+    "content": "Verify rendering via screenshots",
     "status": "completed"
   },
   {
-    "content": "End-to-end frontend testing via testing_agent_v3 (incl. responsive + link validation)",
-    "status": "in_progress"
+    "content": "End-to-end frontend testing via testing_agent_v3",
+    "status": "completed"
   }
 ]
