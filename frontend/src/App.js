@@ -550,6 +550,11 @@ function AppShell() {
     if (!node) return;
     setDownloading(true);
     try {
+      // Wait for all web fonts to be fully loaded so the PNG uses editorial type
+      if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
       const filename = isStory
         ? "we-are-lcv-booking-gap-story-1080x1920.png"
         : "we-are-lcv-booking-gap-full-audit.png";

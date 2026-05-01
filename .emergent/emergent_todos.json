@@ -8,7 +8,7 @@
     "status": "completed"
   },
   {
-    "content": "Add expanded Methodology section (affiliate program, grant scandal, booking-fee transparency)",
+    "content": "Add expanded Methodology section",
     "status": "completed"
   },
   {
@@ -16,11 +16,11 @@
     "status": "completed"
   },
   {
-    "content": "Add 'Download as PNG' buttons (main page + story card)",
+    "content": "Add 'Download as PNG' buttons + font-ready await",
     "status": "completed"
   },
   {
-    "content": "Test everything via testing_agent_v3",
-    "status": "in_progress"
+    "content": "Test everything via testing_agent_v3 — 100% pass",
+    "status": "completed"
   }
 ]
