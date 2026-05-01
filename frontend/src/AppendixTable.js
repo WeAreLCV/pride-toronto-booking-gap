@@ -1,10 +1,14 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PERFORMERS, PERFORMERS_COUNT } from "./data/performers";
 
 /* --------------------------------------------------------------------------
- * AppendixTable — expandable 400+ performer dataset table
- * Features: expand/collapse, search, identity filter, ethnicity filter,
- * pagination (load-more).
+ * AppendixTable — expandable 421-performer dataset
+ *   · Expand / collapse
+ *   · Deep-linkable URL params:  ?appendix=1&q=…&id=…&eth=…&sort=…
+ *   · Search + identity filter + ethnicity filter
+ *   · Sortable columns (number / name / identity / ethnicity / country / stage)
+ *   · "Load more" pagination (+50)
  * ----------------------------------------------------------------------- */
 
 const IDENTITY_SWATCH = {
@@ -26,18 +30,82 @@ const ETHNICITY_LABEL_FR = {
   MENA: "MENA", IND: "Autochtone", "O/M": "Mixte",
 };
 
-export default function AppendixTable({ t, lang }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [idFilter, setIdFilter] = useState("all");
-  const [ethFilter, setEthFilter] = useState("all");
-  const [limit, setLimit] = useState(50);
+// Identity priority for sort ordering (Gay Male first — mirrors chart order)
+const IDENTITY_ORDER = { gm: 0, qnb: 1, t: 2, l: 3, h: 4, sap: 5 };
 
+// Columns configuration
+const SORT_KEYS = ["num", "name", "talent", "identity", "ethnicity", "country", "stage"];
+
+function compareStrings(a, b) {
+  const sa = (a || "").toString();
+  const sb = (b || "").toString();
+  return sa.localeCompare(sb, undefined, { sensitivity: "base" });
+}
+
+function sortPerformers(rows, sortKey, sortDir) {
+  const dir = sortDir === "desc" ? -1 : 1;
+  const sorted = [...rows].sort((x, y) => {
+    let r = 0;
+    switch (sortKey) {
+      case "name":      r = compareStrings(x.n, y.n); break;
+      case "talent":    r = compareStrings(x.t, y.t); break;
+      case "identity":  r = (IDENTITY_ORDER[x.p] ?? 99) - (IDENTITY_ORDER[y.p] ?? 99); break;
+      case "ethnicity": r = compareStrings((x.eth || [])[0] || "\uFFFF", (y.eth || [])[0] || "\uFFFF"); break;
+      case "country":   r = compareStrings(x.c, y.c); break;
+      case "stage":     r = compareStrings(x.s || "\uFFFF", y.s || "\uFFFF"); break;
+      case "num":
+      default:          r = x.id - y.id; break;
+    }
+    if (r === 0) r = x.id - y.id; // stable fallback
+    return r * dir;
+  });
+  return sorted;
+}
+
+export default function AppendixTable({ t, lang }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const isFr = lang === "fr";
 
+  // ---------- state (seeded from URL) ----------
+  const [open, setOpen] = useState(searchParams.get("appendix") === "1");
+  const [query, setQuery] = useState(searchParams.get("q") || "");
+  const [idFilter, setIdFilter] = useState(searchParams.get("id") || "all");
+  const [ethFilter, setEthFilter] = useState(searchParams.get("eth") || "all");
+  const [sortKey, setSortKey] = useState(() => {
+    const sp = searchParams.get("sort") || "num";
+    return SORT_KEYS.includes(sp.replace(/^-/, "")) ? sp.replace(/^-/, "") : "num";
+  });
+  const [sortDir, setSortDir] = useState(() => {
+    const sp = searchParams.get("sort") || "num";
+    return sp.startsWith("-") ? "desc" : "asc";
+  });
+  const [limit, setLimit] = useState(50);
+
+  // ---------- sync state → URL (shallow, no nav) ----------
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+
+    // preserve any non-appendix params we don't own
+    const managed = ["appendix", "q", "id", "eth", "sort"];
+    managed.forEach((k) => next.delete(k));
+
+    if (open) next.set("appendix", "1");
+    if (query.trim()) next.set("q", query.trim());
+    if (idFilter !== "all") next.set("id", idFilter);
+    if (ethFilter !== "all") next.set("eth", ethFilter);
+    if (!(sortKey === "num" && sortDir === "asc")) {
+      next.set("sort", (sortDir === "desc" ? "-" : "") + sortKey);
+    }
+
+    // avoid noisy history entries — use replace
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, query, idFilter, ethFilter, sortKey, sortDir]);
+
+  // ---------- filter & sort ----------
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return PERFORMERS.filter((p) => {
+    const rows = PERFORMERS.filter((p) => {
       if (idFilter !== "all" && p.p !== idFilter) return false;
       if (ethFilter !== "all" && !(p.eth || []).includes(ethFilter)) return false;
       if (q) {
@@ -46,17 +114,45 @@ export default function AppendixTable({ t, lang }) {
       }
       return true;
     });
-  }, [query, idFilter, ethFilter]);
+    return sortPerformers(rows, sortKey, sortDir);
+  }, [query, idFilter, ethFilter, sortKey, sortDir]);
 
   const visible = filtered.slice(0, limit);
 
+  // Reset pagination when filters/sorts change
+  useEffect(() => {
+    setLimit(50);
+  }, [query, idFilter, ethFilter, sortKey, sortDir]);
+
+  const handleSort = useCallback(
+    (key) => {
+      if (!SORT_KEYS.includes(key)) return;
+      if (sortKey === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      } else {
+        setSortKey(key);
+        setSortDir("asc");
+      }
+    },
+    [sortKey]
+  );
+
+  const clearFilters = useCallback(() => {
+    setQuery("");
+    setIdFilter("all");
+    setEthFilter("all");
+    setSortKey("num");
+    setSortDir("asc");
+  }, []);
+
+  // ---------- i18n labels ----------
   const label = {
     kicker: isFr ? "Annexe" : "Appendix",
     heading1: isFr ? "Le jeu de donn\u00e9es " : "The full ",
     heading2: isFr ? "complet." : "409-performer dataset.",
     intro: isFr
-      ? `Tableau filtrable des ${PERFORMERS_COUNT} artistes publiquement annonc\u00e9\u00b7e\u00b7s dans la programmation 2025 de Pride Toronto (les groupes de plusieurs personnes ont \u00e9t\u00e9 \u00e9clat\u00e9s en entr\u00e9es individuelles). Corrections\u00a0: info@wearelcv.ca.`
-      : `A filterable table of all ${PERFORMERS_COUNT} performers publicly announced in Pride Toronto's 2025 lineup (group acts have been expanded into individual rows). For corrections: info@wearelcv.ca.`,
+      ? `Tableau filtrable et partageable des ${PERFORMERS_COUNT} artistes publiquement annonc\u00e9\u00b7e\u00b7s dans la programmation 2025 de Pride Toronto (les groupes de plusieurs personnes ont \u00e9t\u00e9 \u00e9clat\u00e9s en entr\u00e9es individuelles). Toutes vos s\u00e9lections s'encodent dans l'URL \u2014 partagez le lien et les filtres sont pr\u00e9serv\u00e9s.`
+      : `A filterable, shareable table of all ${PERFORMERS_COUNT} performers publicly announced in Pride Toronto's 2025 lineup (group acts have been expanded into individual rows). Every selection you make is encoded in the URL — share the link and your filters travel with it.`,
     toggleOpen: isFr ? `Afficher le tableau des ${PERFORMERS_COUNT} artistes` : `Show all ${PERFORMERS_COUNT} performers`,
     toggleClose: isFr ? "Masquer le tableau" : "Hide table",
     search: isFr ? "Rechercher par nom, talent, pays, sc\u00e8ne\u2026" : "Search by name, talent, country, stage\u2026",
@@ -66,21 +162,28 @@ export default function AppendixTable({ t, lang }) {
     of: isFr ? "sur" : "of",
     loadMore: isFr ? "Afficher plus" : "Load more",
     empty: isFr ? "Aucun r\u00e9sultat." : "No results.",
+    clear: isFr ? "R\u00e9initialiser" : "Reset",
+    sortBy: isFr ? "Trier par" : "Sort",
     headers: {
-      num: "#",
-      name: isFr ? "Nom" : "Name",
-      talent: isFr ? "Discipline" : "Talent",
-      identity: isFr ? "Identit\u00e9" : "Identity",
-      ethnicity: isFr ? "Ethnicit\u00e9" : "Ethnicity",
-      country: isFr ? "Pays" : "Country",
-      stage: isFr ? "Sc\u00e8ne" : "Stage",
+      num:       { label: "#",                                         sortable: true  },
+      name:      { label: isFr ? "Nom"        : "Name",                sortable: true  },
+      talent:    { label: isFr ? "Discipline" : "Talent",              sortable: true  },
+      identity:  { label: isFr ? "Identit\u00e9": "Identity",          sortable: true  },
+      ethnicity: { label: isFr ? "Ethnicit\u00e9": "Ethnicity",        sortable: true  },
+      country:   { label: isFr ? "Pays"       : "Country",             sortable: true  },
+      stage:     { label: isFr ? "Sc\u00e8ne" : "Stage",               sortable: true  },
     },
+  };
+
+  const sortIndicator = (key) => {
+    if (sortKey !== key) return "\u2195"; // ↕
+    return sortDir === "asc" ? "\u25B4" : "\u25BE"; // ▴ / ▾
   };
 
   return (
     <section className="appendix-section" data-testid="appendix-section">
       <div className="kicker">
-        <span className="kicker-num">07</span>
+        <span className="kicker-num">08</span>
         <span className="kicker-line" />
         <span className="kicker-text">{label.kicker}</span>
       </div>
@@ -112,13 +215,13 @@ export default function AppendixTable({ t, lang }) {
               className="appendix-search"
               placeholder={label.search}
               value={query}
-              onChange={(e) => { setQuery(e.target.value); setLimit(50); }}
+              onChange={(e) => setQuery(e.target.value)}
               data-testid="appendix-search"
             />
             <select
               className="appendix-select"
               value={idFilter}
-              onChange={(e) => { setIdFilter(e.target.value); setLimit(50); }}
+              onChange={(e) => setIdFilter(e.target.value)}
               data-testid="appendix-filter-id"
               aria-label="Identity filter"
             >
@@ -130,7 +233,7 @@ export default function AppendixTable({ t, lang }) {
             <select
               className="appendix-select"
               value={ethFilter}
-              onChange={(e) => { setEthFilter(e.target.value); setLimit(50); }}
+              onChange={(e) => setEthFilter(e.target.value)}
               data-testid="appendix-filter-eth"
               aria-label="Ethnicity filter"
             >
@@ -139,6 +242,16 @@ export default function AppendixTable({ t, lang }) {
                 <option key={key} value={key}>{isFr ? ETHNICITY_LABEL_FR[key] : v}</option>
               ))}
             </select>
+            {(query || idFilter !== "all" || ethFilter !== "all" || sortKey !== "num" || sortDir !== "asc") && (
+              <button
+                className="appendix-clear"
+                onClick={clearFilters}
+                data-testid="appendix-clear"
+                title="Clear filters and sort"
+              >
+                {label.clear}
+              </button>
+            )}
             <span className="appendix-count" data-testid="appendix-count">
               {label.showing} <b>{visible.length}</b> {label.of} <b>{filtered.length}</b>
             </span>
@@ -148,13 +261,23 @@ export default function AppendixTable({ t, lang }) {
             <table className="appendix-table">
               <thead>
                 <tr>
-                  <th className="col-num">{label.headers.num}</th>
-                  <th>{label.headers.name}</th>
-                  <th>{label.headers.talent}</th>
-                  <th>{label.headers.identity}</th>
-                  <th>{label.headers.ethnicity}</th>
-                  <th>{label.headers.country}</th>
-                  <th>{label.headers.stage}</th>
+                  {Object.entries(label.headers).map(([key, col]) => (
+                    <th
+                      key={key}
+                      className={`col-${key === "num" ? "num" : ""} ${sortKey === key ? "is-sorted" : ""}`}
+                      scope="col"
+                    >
+                      <button
+                        className="th-sort"
+                        onClick={() => handleSort(key)}
+                        data-testid={`appendix-sort-${key}`}
+                        aria-sort={sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+                      >
+                        <span>{col.label}</span>
+                        <span className="sort-ic" aria-hidden="true">{sortIndicator(key)}</span>
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>

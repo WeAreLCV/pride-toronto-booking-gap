@@ -1,26 +1,22 @@
 [
   {
-    "content": "Add Feed format (1080×1080) variant at /feed route",
-    "status": "completed"
+    "content": "Install sharp + write build-time SVG→PNG script, add prebuild hook",
+    "status": "in_progress"
   },
   {
-    "content": "Create static og:image + add og:image meta tags",
-    "status": "completed"
+    "content": "Add deep-linking for appendix filters (?q, ?filter, ?eth)",
+    "status": "pending"
   },
   {
-    "content": "Add keyboard shortcuts (L, D, F, S, A)",
-    "status": "completed"
+    "content": "Add 'Copy share caption' button (EN/FR) with hashtags + stat preview",
+    "status": "pending"
   },
   {
-    "content": "Parse 409-performer list to structured JSON (421 rows)",
-    "status": "completed"
+    "content": "Add sortable columns in appendix table (name, identity, country, stage)",
+    "status": "pending"
   },
   {
-    "content": "Build expandable Appendix with searchable/filterable performer table",
-    "status": "completed"
-  },
-  {
-    "content": "Test all 4 features via testing_agent_v3 — 100% pass",
-    "status": "completed"
+    "content": "Test all 4 features via testing_agent_v3",
+    "status": "pending"
   }
 ]

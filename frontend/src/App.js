@@ -6,6 +6,7 @@ import { translations, getLocale, setLocaleStorage, formatPct, formatInt } from 
 import StoryCard, { STORY_WIDTH, STORY_HEIGHT } from "./StoryCard";
 import FeedCard, { FEED_SIZE } from "./FeedCard";
 import AppendixTable from "./AppendixTable";
+import ShareCaption from "./ShareCaption";
 
 /* =============================================================================
  * Pride Toronto 2025: The Booking Gap — We Are LCV
@@ -496,6 +497,7 @@ const FullAuditPage = React.forwardRef(function FullAuditPage(_props, ref) {
       <EthnicitySection />
       <MethodologySection />
       <MissionSection />
+      <ShareCaption lang={lang} />
       <AppendixTable t={t} lang={lang} />
       <ContactBar />
       <Disclaimer />
