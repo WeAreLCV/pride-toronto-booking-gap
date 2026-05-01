@@ -12,9 +12,11 @@ export const translations = {
       langEN: "EN",
       langFR: "FR",
       viewFull: "Full Audit",
-      viewStory: "Story Card",
+      viewStory: "Story",
+      viewFeed: "Feed",
       download: "Download PNG",
       downloading: "Preparing…",
+      shortcuts: "L · language · D · download · F / S / A · switch format",
     },
     // Masthead
     masthead: {
@@ -191,9 +193,11 @@ export const translations = {
       langEN: "EN",
       langFR: "FR",
       viewFull: "Audit complet",
-      viewStory: "Carte Story",
+      viewStory: "Story",
+      viewFeed: "Feed",
       download: "Télécharger PNG",
       downloading: "Préparation…",
+      shortcuts: "L · langue · D · téléchargement · F / S / A · format",
     },
     masthead: {
       eyebrowLeft: "Audit communautaire indépendant",

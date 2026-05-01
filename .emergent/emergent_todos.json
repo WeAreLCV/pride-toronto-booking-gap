@@ -1,26 +1,26 @@
 [
   {
-    "content": "Install html-to-image for PNG export",
+    "content": "Add Feed format (1080×1080) variant at /feed route",
     "status": "completed"
   },
   {
-    "content": "Add i18n translations (EN/FR) + language toggle",
+    "content": "Create static og:image + add og:image meta tags",
     "status": "completed"
   },
   {
-    "content": "Add expanded Methodology section",
+    "content": "Add keyboard shortcuts (L, D, F, S, A)",
     "status": "completed"
   },
   {
-    "content": "Build IG Story-format (1080×1920) variant at /story route",
+    "content": "Parse 409-performer list to structured JSON (421 rows incl. group splits)",
     "status": "completed"
   },
   {
-    "content": "Add 'Download as PNG' buttons + font-ready await",
+    "content": "Build expandable Appendix with searchable/filterable performer table",
     "status": "completed"
   },
   {
-    "content": "Test everything via testing_agent_v3 — 100% pass",
-    "status": "completed"
+    "content": "Test all 4 features via testing_agent_v3",
+    "status": "in_progress"
   }
 ]

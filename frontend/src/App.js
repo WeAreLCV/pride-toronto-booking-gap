@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, createContext, useContext } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { toPng } from "html-to-image";
 import { translations, getLocale, setLocaleStorage, formatPct, formatInt } from "./i18n";
 import StoryCard, { STORY_WIDTH, STORY_HEIGHT } from "./StoryCard";
+import FeedCard, { FEED_SIZE } from "./FeedCard";
+import AppendixTable from "./AppendixTable";
 
 /* =============================================================================
  * Pride Toronto 2025: The Booking Gap — We Are LCV
@@ -63,6 +65,8 @@ function Toolbar({ onDownload, downloading }) {
   const { lang, setLang, t } = useLang();
   const { pathname } = useLocation();
   const isStory = pathname.startsWith("/story");
+  const isFeed = pathname.startsWith("/feed");
+  const isFull = !isStory && !isFeed;
 
   return (
     <div className="toolbar" data-testid="toolbar">
@@ -73,6 +77,7 @@ function Toolbar({ onDownload, downloading }) {
             onClick={() => setLang("en")}
             data-testid="lang-en"
             aria-pressed={lang === "en"}
+            title="Toggle language (L)"
           >
             {t.toolbar.langEN}
           </button>
@@ -82,6 +87,7 @@ function Toolbar({ onDownload, downloading }) {
             onClick={() => setLang("fr")}
             data-testid="lang-fr"
             aria-pressed={lang === "fr"}
+            title="Toggle language (L)"
           >
             {t.toolbar.langFR}
           </button>
@@ -90,8 +96,9 @@ function Toolbar({ onDownload, downloading }) {
         <div className="tb-group tb-group--view" role="group" aria-label="View mode">
           <Link
             to="/"
-            className={`tb-view ${!isStory ? "is-active" : ""}`}
+            className={`tb-view ${isFull ? "is-active" : ""}`}
             data-testid="view-full"
+            title="Full Audit (A)"
           >
             {t.toolbar.viewFull}
           </Link>
@@ -99,16 +106,30 @@ function Toolbar({ onDownload, downloading }) {
             to="/story"
             className={`tb-view ${isStory ? "is-active" : ""}`}
             data-testid="view-story"
+            title="Story 1080×1920 (S)"
           >
             {t.toolbar.viewStory}
           </Link>
+          <Link
+            to="/feed"
+            className={`tb-view ${isFeed ? "is-active" : ""}`}
+            data-testid="view-feed"
+            title="Feed 1080×1080 (F)"
+          >
+            {t.toolbar.viewFeed}
+          </Link>
         </div>
+
+        <span className="tb-shortcuts" aria-hidden="true" title={t.toolbar.shortcuts}>
+          ⌨ {t.toolbar.shortcuts}
+        </span>
 
         <button
           className="tb-download"
           onClick={onDownload}
           disabled={downloading}
           data-testid="download-png"
+          title="Download PNG (D)"
         >
           <span className="tb-download-icon" aria-hidden="true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -465,6 +486,7 @@ function Disclaimer() {
 /* -------------------------------------------------------------------------- */
 
 const FullAuditPage = React.forwardRef(function FullAuditPage(_props, ref) {
+  const { t, lang } = useLang();
   return (
     <main className="magazine" ref={ref} data-testid="magazine">
       <Masthead />
@@ -474,6 +496,7 @@ const FullAuditPage = React.forwardRef(function FullAuditPage(_props, ref) {
       <EthnicitySection />
       <MethodologySection />
       <MissionSection />
+      <AppendixTable t={t} lang={lang} />
       <ContactBar />
       <Disclaimer />
     </main>
@@ -529,14 +552,62 @@ function StoryPage({ storyRef }) {
   );
 }
 
+function FeedPage({ feedRef }) {
+  const { t, lang } = useLang();
+  const wrapRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  const recompute = useCallback(() => {
+    if (!wrapRef.current) return;
+    const { clientWidth, clientHeight } = wrapRef.current;
+    const sx = clientWidth / FEED_SIZE;
+    const sy = clientHeight / FEED_SIZE;
+    setScale(Math.min(sx, sy, 1));
+  }, []);
+
+  useEffect(() => {
+    recompute();
+    window.addEventListener("resize", recompute);
+    return () => window.removeEventListener("resize", recompute);
+  }, [recompute]);
+
+  return (
+    <main className="story-page" data-testid="feed-page">
+      <div className="story-meta">
+        <span className="story-meta-label">IG FEED · 1080 × 1080</span>
+        <span className="story-meta-dim">
+          {lang === "fr"
+            ? "Aperçu mis à l'échelle · le téléchargement est à la taille native."
+            : "Preview is scaled · PNG downloads at native size."}
+        </span>
+      </div>
+      <div className="story-stage story-stage--square" ref={wrapRef}>
+        <div
+          className="story-scale"
+          style={{
+            width: FEED_SIZE,
+            height: FEED_SIZE,
+            transform: `translate(-50%, -50%) scale(${scale})`,
+          }}
+        >
+          <FeedCard t={t} locale={lang} ref={feedRef} />
+        </div>
+      </div>
+    </main>
+  );
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Shell — mounts toolbar + routes + manages PNG download                    */
 /* -------------------------------------------------------------------------- */
 
 function AppShell() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { lang, setLang } = useLang();
   const fullRef = useRef(null);
   const storyRef = useRef(null);
+  const feedRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
@@ -546,7 +617,8 @@ function AppShell() {
 
   const handleDownload = useCallback(async () => {
     const isStory = pathname.startsWith("/story");
-    const node = isStory ? storyRef.current : fullRef.current;
+    const isFeed = pathname.startsWith("/feed");
+    const node = isStory ? storyRef.current : isFeed ? feedRef.current : fullRef.current;
     if (!node) return;
     setDownloading(true);
     try {
@@ -555,19 +627,23 @@ function AppShell() {
         await document.fonts.ready;
       }
 
-      const filename = isStory
-        ? "we-are-lcv-booking-gap-story-1080x1920.png"
-        : "we-are-lcv-booking-gap-full-audit.png";
+      let filename;
+      if (isStory) filename = "we-are-lcv-booking-gap-story-1080x1920.png";
+      else if (isFeed) filename = "we-are-lcv-booking-gap-feed-1080x1080.png";
+      else filename = "we-are-lcv-booking-gap-full-audit.png";
 
       const opts = {
         cacheBust: true,
-        pixelRatio: isStory ? 1 : 2,
+        pixelRatio: isStory || isFeed ? 1 : 2,
         backgroundColor: "#292929",
         style: { transform: "none" },
       };
       if (isStory) {
         opts.width = STORY_WIDTH;
         opts.height = STORY_HEIGHT;
+      } else if (isFeed) {
+        opts.width = FEED_SIZE;
+        opts.height = FEED_SIZE;
       }
 
       const dataUrl = await toPng(node, opts);
@@ -584,6 +660,37 @@ function AppShell() {
     }
   }, [pathname]);
 
+  // Keyboard shortcuts: L (lang), D (download), F (feed), S (story), A (full audit)
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target;
+      const tag = target && target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (target && target.isContentEditable)) {
+        return;
+      }
+      const key = (e.key || "").toLowerCase();
+      if (key === "l") {
+        e.preventDefault();
+        setLang(lang === "en" ? "fr" : "en");
+      } else if (key === "d") {
+        e.preventDefault();
+        handleDownload();
+      } else if (key === "f") {
+        e.preventDefault();
+        navigate("/feed");
+      } else if (key === "s") {
+        e.preventDefault();
+        navigate("/story");
+      } else if (key === "a") {
+        e.preventDefault();
+        navigate("/");
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lang, setLang, navigate, handleDownload]);
+
   return (
     <div className="page" data-testid="page-root">
       <div className="grain" aria-hidden="true" />
@@ -591,6 +698,7 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<FullAuditPage ref={fullRef} />} />
         <Route path="/story" element={<StoryPage storyRef={storyRef} />} />
+        <Route path="/feed" element={<FeedPage feedRef={feedRef} />} />
         <Route path="*" element={<FullAuditPage ref={fullRef} />} />
       </Routes>
     </div>

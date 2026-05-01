@@ -171,6 +171,28 @@
     color: var(--text);
 }
 
+.tb-shortcuts {
+    display: none;
+    font-family: var(--ff-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-faint);
+    padding: 0 12px;
+    flex: 1;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (min-width: 1180px) {
+    .tb-shortcuts {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+}
+
 .tb-download {
     margin-left: auto;
     display: inline-flex;
@@ -1665,3 +1687,571 @@
         font-size: clamp(30px, 9vw, 44px);
     }
 }
+
+/* =========================================================================
+   Story-stage square variant (for Feed 1080x1080)
+   ========================================================================= */
+
+.story-stage--square {
+    height: calc(min(80vh, 900px));
+    aspect-ratio: 1 / 1;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* =========================================================================
+   Feed card — 1080 x 1080 native render
+   ========================================================================= */
+
+.feed-card {
+    width: 1080px;
+    height: 1080px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--ff-sans);
+    padding: 64px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.feed-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 520px 340px at 15% 10%, rgba(74, 21, 237, 0.22), transparent 70%),
+        radial-gradient(ellipse 460px 340px at 90% 95%, rgba(229, 175, 251, 0.12), transparent 70%);
+    pointer-events: none;
+}
+
+.fc-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--ff-mono);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    color: var(--text-dim);
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--hair);
+    position: relative;
+    z-index: 2;
+}
+
+.fc-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    position: relative;
+    z-index: 2;
+    justify-content: center;
+    padding: 18px 0;
+}
+
+.fc-title {
+    font-family: var(--ff-display);
+    font-weight: 500;
+    font-size: 108px;
+    line-height: 0.88;
+    letter-spacing: -0.035em;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.fc-title-row1 {
+    color: var(--text);
+}
+
+.fc-title-row2 em {
+    font-style: italic;
+    font-weight: 400;
+    background: linear-gradient(180deg, var(--accent) 0%, #c980e6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.fc-hero-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 28px;
+    padding: 20px 0;
+    border-top: 1px solid var(--hair);
+    border-bottom: 1px solid var(--hair);
+}
+
+.fc-hero-num-wrap {
+    position: relative;
+    line-height: 0.82;
+    isolation: isolate;
+    flex-shrink: 0;
+}
+
+.fc-hero-num {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    font-family: var(--ff-display);
+    font-weight: 700;
+    font-style: italic;
+    font-size: 220px;
+    letter-spacing: -0.05em;
+    background: linear-gradient(180deg, #6B3BFF 0%, #4A15ED 55%, #2D00B8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 36px rgba(74, 21, 237, 0.3);
+}
+
+.fc-hero-pct {
+    font-size: 0.5em;
+    vertical-align: super;
+}
+
+.fc-hero-num-shadow {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    z-index: 1;
+    font-family: var(--ff-display);
+    font-weight: 700;
+    font-style: italic;
+    font-size: 220px;
+    letter-spacing: -0.05em;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--accent);
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.fc-hero-meta {
+    padding-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.fc-hero-label {
+    font-family: var(--ff-mono);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.2em;
+    color: var(--text);
+    text-transform: uppercase;
+    line-height: 1.25;
+}
+
+.fc-hero-sub {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 22px;
+    line-height: 1.35;
+    color: var(--text-dim);
+    max-width: 380px;
+}
+
+.fc-split-bar {
+    display: flex;
+    width: 100%;
+    height: 56px;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.fc-split-seg {
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    font-family: var(--ff-mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+}
+
+.fc-split-seg--gm {
+    background: linear-gradient(90deg, #4A15ED 0%, #6B3BFF 100%);
+    color: #fff;
+}
+
+.fc-split-seg--else {
+    background: linear-gradient(90deg, #E5AFFB 0%, #D890F5 100%);
+    color: #2a0044;
+    justify-content: flex-end;
+}
+
+.fc-callout {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    padding: 22px 28px;
+    border: 1px solid var(--hair-strong);
+    border-left: 3px solid var(--accent);
+    background: linear-gradient(180deg, rgba(229, 175, 251, 0.09) 0%, rgba(229, 175, 251, 0.03) 100%);
+    border-radius: 2px;
+}
+
+.fc-callout-num {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 82px;
+    line-height: 0.9;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    flex-shrink: 0;
+}
+
+.fc-callout-text {
+    font-family: var(--ff-sans);
+    font-size: 20px;
+    line-height: 1.4;
+    color: var(--text);
+    max-width: 640px;
+}
+
+.fc-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--hair);
+    font-family: var(--ff-mono);
+    font-size: 14px;
+    letter-spacing: 0.16em;
+    position: relative;
+    z-index: 2;
+    gap: 18px;
+}
+
+.fc-footer-handle {
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.fc-footer-mid {
+    color: var(--text-dim);
+    flex: 1;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.fc-footer-right {
+    color: var(--text-faint);
+    text-transform: uppercase;
+    text-align: right;
+}
+
+/* =========================================================================
+   Appendix — expandable 409-performer table
+   ========================================================================= */
+
+.appendix-section {
+    margin-bottom: 96px;
+}
+
+.appendix-intro {
+    font-family: var(--ff-sans);
+    font-size: clamp(15px, 1.3vw, 17px);
+    line-height: 1.65;
+    color: var(--text-dim);
+    max-width: 820px;
+    margin: 0 0 24px;
+}
+
+.appendix-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-elev);
+    border: 1px solid var(--hair-strong);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-family: var(--ff-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.appendix-toggle:hover {
+    background: rgba(229, 175, 251, 0.08);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.appendix-toggle-ic {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.appendix-body {
+    margin-top: 32px;
+    border-top: 1px solid var(--hair);
+    padding-top: 24px;
+}
+
+.appendix-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+    align-items: center;
+}
+
+.appendix-search,
+.appendix-select {
+    background: var(--bg-elev);
+    border: 1px solid var(--hair);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 2px;
+    font-family: var(--ff-mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+.appendix-search:focus,
+.appendix-select:focus {
+    border-color: var(--accent);
+}
+
+.appendix-search {
+    flex: 2 1 260px;
+    min-width: 220px;
+}
+
+.appendix-select {
+    flex: 1 1 180px;
+    cursor: pointer;
+}
+
+.appendix-select option {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.appendix-count {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    flex: 1 1 auto;
+    text-align: right;
+}
+
+.appendix-count b {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.appendix-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--hair);
+    border-radius: 2px;
+    background: var(--bg-elev);
+    -webkit-overflow-scrolling: touch;
+    max-height: 640px;
+    overflow-y: auto;
+}
+
+.appendix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--ff-mono);
+    font-size: 12px;
+    min-width: 880px;
+}
+
+.appendix-table thead {
+    background: #2a2a2a;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.appendix-table th {
+    text-align: left;
+    padding: 14px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text);
+    border-bottom: 1px solid var(--hair-strong);
+    white-space: nowrap;
+}
+
+.appendix-table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid var(--hair);
+    color: var(--text-dim);
+    vertical-align: top;
+    line-height: 1.45;
+}
+
+.appendix-table tbody tr:hover {
+    background: rgba(229, 175, 251, 0.04);
+}
+
+.appendix-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.col-num {
+    width: 44px;
+    color: var(--text-faint) !important;
+    font-weight: 500;
+    text-align: right;
+}
+
+.col-name {
+    font-family: var(--ff-display);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text) !important;
+    letter-spacing: -0.01em;
+    min-width: 160px;
+}
+
+.col-talent {
+    min-width: 110px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+}
+
+.col-country,
+.col-stage {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-faint) !important;
+    white-space: nowrap;
+}
+
+.col-eth {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.id-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px 3px 6px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-family: var(--ff-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.id-tag-chip {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.id-raw {
+    display: block;
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.04em;
+}
+
+.eth-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(228, 226, 221, 0.06);
+    border: 1px solid var(--hair);
+    border-radius: 2px;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.appendix-empty {
+    text-align: center;
+    padding: 40px 12px !important;
+    color: var(--text-faint) !important;
+    font-style: italic;
+}
+
+.appendix-loadmore {
+    margin-top: 20px;
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 1px dashed var(--hair-strong);
+    color: var(--text-dim);
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color 0.2s, color 0.2s;
+}
+
+.appendix-loadmore:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+@media (max-width: 600px) {
+    .appendix-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .appendix-count {
+        text-align: left;
+    }
+
+    .appendix-search,
+    .appendix-select {
+        width: 100%;
+    }
+
+    .appendix-section {
+        margin-bottom: 64px;
+    }
+}
+
