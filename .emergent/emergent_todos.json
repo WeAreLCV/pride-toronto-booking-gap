@@ -1,22 +1,26 @@
 [
   {
-    "content": "Update index.html: fonts + meta title",
+    "content": "Install html-to-image for PNG export",
     "status": "completed"
   },
   {
-    "content": "Build App.js with editorial infographic layout",
+    "content": "Add i18n translations (EN/FR) + language toggle",
     "status": "completed"
   },
   {
-    "content": "Build App.css with editorial dark-mode styling",
+    "content": "Add expanded Methodology section (affiliate program, grant scandal, booking-fee transparency)",
     "status": "completed"
   },
   {
-    "content": "Verify rendering via screenshots",
+    "content": "Build IG Story-format (1080×1920) variant at /story route",
     "status": "completed"
   },
   {
-    "content": "End-to-end frontend testing via testing_agent_v3",
+    "content": "Add 'Download as PNG' buttons (main page + story card)",
     "status": "completed"
+  },
+  {
+    "content": "Test everything via testing_agent_v3",
+    "status": "in_progress"
   }
 ]

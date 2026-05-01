@@ -1,111 +1,213 @@
-import { useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback, createContext, useContext } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
+import { toPng } from "html-to-image";
+import { translations, getLocale, setLocaleStorage, formatPct, formatInt } from "./i18n";
+import StoryCard, { STORY_WIDTH, STORY_HEIGHT } from "./StoryCard";
 
-/* ----------------------------------------------------------------------------
- * Pride Toronto 2025: The Booking Gap
- * Independent community audit by We Are LCV (@wearelcv)
- *
- * All data below is editable in one place.
- * Numbers sourced from the 409-performer lineup audit provided by We Are LCV.
- * NOTE: Identity percentages can sum above 100% because some performers
- * identify across multiple categories (e.g. Queer + Lesbian). Each bar
- * represents the share of the 409-performer lineup that includes that identity.
- * ------------------------------------------------------------------------- */
+/* =============================================================================
+ * Pride Toronto 2025: The Booking Gap — We Are LCV
+ * - Bilingual EN/FR
+ * - Full Audit at "/"
+ * - IG Story Card (1080x1920) at "/story"
+ * - Download as PNG
+ * - Expanded methodology / context section
+ * ========================================================================== */
 
 const DATA = {
-  brand: {
-    bg: "#292929",
-    text: "#E4E2DD",
-    accent: "#E5AFFB",
-  },
-  headline: {
-    totalPerformers: 409,
-    gayMenPct: 60.4,
-    everyoneElsePct: 39.6,
-    whiteGayMenPct: 35,
-  },
+  totalPerformers: 409,
+  gayMenPct: 60.4,
+  everyoneElsePct: 39.6,
+  whiteGayMenPct: 35,
   identities: [
-    { key: "gm",   label: "Gay Male",          short: "GM / M",   pct: 60.4, color: "#4A15ED" },
-    { key: "qnb",  label: "Queer / Non-Binary", short: "Q / NB",   pct: 17.8, color: "#70E580" },
-    { key: "t",    label: "Trans",              short: "TM / TW / T", pct: 9.5,  color: "#9495E6" },
-    { key: "l",    label: "Lesbian",            short: "L / F",    pct: 8.6,  color: "#F9BBE6" },
-    { key: "h",    label: "Heterosexual / N·A", short: "H / N·A", pct: 6.8,  color: "#FF3C00" },
-    { key: "sap",  label: "Sapphic / Pan / Bi", short: "SAP / Bi", pct: 2.9,  color: "#9CF6F6" },
+    { key: "gm",  pct: 60.4, color: "#4A15ED" },
+    { key: "qnb", pct: 17.8, color: "#70E580" },
+    { key: "t",   pct: 9.5,  color: "#9495E6" },
+    { key: "l",   pct: 8.6,  color: "#F9BBE6" },
+    { key: "h",   pct: 6.8,  color: "#FF3C00" },
+    { key: "sap", pct: 2.9,  color: "#9CF6F6" },
   ],
-  ethnicity: {
-    white: 53.3,
-    bipoc: 46.7,
-  },
+  ethnicity: { white: 53.3, bipoc: 46.7 },
   links: {
-    instagram: { handle: "@wearelcv",   url: "https://www.instagram.com/wearelcv" },
-    facebook:  { handle: "WeAreLcv",    url: "https://www.facebook.com/WeAreLcv" },
+    instagram: { handle: "@wearelcv",        url: "https://www.instagram.com/wearelcv" },
+    facebook:  { handle: "WeAreLcv",         url: "https://www.facebook.com/WeAreLcv" },
     email:     { handle: "info@wearelcv.ca", url: "mailto:info@wearelcv.ca" },
-    bio:       { handle: "bio.site/LesbianCvisibility", url: "https://bio.site/LesbianCvisibility" },
   },
 };
 
+/* ---- i18n context ---- */
+
+const LangContext = createContext({ lang: "en", setLang: () => {}, t: translations.en });
+
+function LangProvider({ children }) {
+  const [lang, _setLang] = useState(() => getLocale());
+  const setLang = useCallback((l) => {
+    _setLang(l);
+    setLocaleStorage(l);
+    if (typeof document !== "undefined") document.documentElement.lang = l;
+  }, []);
+  useEffect(() => {
+    if (typeof document !== "undefined") document.documentElement.lang = lang;
+  }, [lang]);
+  const value = useMemo(() => ({ lang, setLang, t: translations[lang] }), [lang, setLang]);
+  return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
+}
+
+const useLang = () => useContext(LangContext);
+
+/* -------------------------------------------------------------------------- */
+/*  Toolbar (language toggle + route toggle + download)                       */
+/* -------------------------------------------------------------------------- */
+
+function Toolbar({ onDownload, downloading }) {
+  const { lang, setLang, t } = useLang();
+  const { pathname } = useLocation();
+  const isStory = pathname.startsWith("/story");
+
+  return (
+    <div className="toolbar" data-testid="toolbar">
+      <div className="toolbar-inner">
+        <div className="tb-group tb-group--lang" role="group" aria-label="Language">
+          <button
+            className={`tb-lang ${lang === "en" ? "is-active" : ""}`}
+            onClick={() => setLang("en")}
+            data-testid="lang-en"
+            aria-pressed={lang === "en"}
+          >
+            {t.toolbar.langEN}
+          </button>
+          <span className="tb-lang-sep" aria-hidden="true">/</span>
+          <button
+            className={`tb-lang ${lang === "fr" ? "is-active" : ""}`}
+            onClick={() => setLang("fr")}
+            data-testid="lang-fr"
+            aria-pressed={lang === "fr"}
+          >
+            {t.toolbar.langFR}
+          </button>
+        </div>
+
+        <div className="tb-group tb-group--view" role="group" aria-label="View mode">
+          <Link
+            to="/"
+            className={`tb-view ${!isStory ? "is-active" : ""}`}
+            data-testid="view-full"
+          >
+            {t.toolbar.viewFull}
+          </Link>
+          <Link
+            to="/story"
+            className={`tb-view ${isStory ? "is-active" : ""}`}
+            data-testid="view-story"
+          >
+            {t.toolbar.viewStory}
+          </Link>
+        </div>
+
+        <button
+          className="tb-download"
+          onClick={onDownload}
+          disabled={downloading}
+          data-testid="download-png"
+        >
+          <span className="tb-download-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </span>
+          <span>{downloading ? t.toolbar.downloading : t.toolbar.download}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Full Audit page sections                                                  */
 /* -------------------------------------------------------------------------- */
 
 function Masthead() {
+  const { t, lang } = useLang();
+  const m = t.masthead;
   return (
     <header className="masthead" data-testid="masthead">
       <div className="masthead-top">
-        <span className="eyebrow">Independent Community Audit</span>
-        <span className="eyebrow eyebrow--right">Vol. 01 · Summer 2025</span>
+        <span className="eyebrow">{m.eyebrowLeft}</span>
+        <span className="eyebrow eyebrow--right">{m.eyebrowRight}</span>
       </div>
       <hr className="hair" />
       <h1 className="display-title" data-testid="page-title">
-        <span className="title-row-1">The Booking</span>
+        <span className="title-row-1">{m.title1}</span>
         <span className="title-row-2">
-          <em>Gap</em><span className="title-dot">.</span>
+          <em>{m.title2}</em>
+          <span className="title-dot">.</span>
         </span>
       </h1>
       <p className="deck">
-        Pride Toronto 2025 — <em>who actually got on the stage?</em>
+        {m.deck[0]}
+        <em>{m.deck[1]}</em>
       </p>
       <div className="byline">
-        <span><b>409</b> performers analyzed</span>
+        <span>
+          <b>{formatInt(DATA.totalPerformers, lang)}</b>
+          {m.bylineCount}
+        </span>
         <span className="byline-dot">·</span>
-        <span>Compiled from public 2025 lineup announcements</span>
+        <span>{m.bylineCompiled}</span>
         <span className="byline-dot">·</span>
-        <span>by <b>@wearelcv</b></span>
+        <span>
+          {m.bylineBy} <b>@wearelcv</b>
+        </span>
       </div>
     </header>
   );
 }
 
+function Kicker({ num, children }) {
+  return (
+    <div className="kicker">
+      <span className="kicker-num">{num}</span>
+      <span className="kicker-line" />
+      <span className="kicker-text">{children}</span>
+    </div>
+  );
+}
+
 function HeroStat() {
+  const { t, lang } = useLang();
+  const h = t.hero;
   return (
     <section className="hero-stat" data-testid="hero-stat">
-      <div className="kicker">
-        <span className="kicker-num">01</span>
-        <span className="kicker-line" />
-        <span className="kicker-text">The Headline</span>
-      </div>
-
+      <Kicker num="01">{h.kicker}</Kicker>
       <div className="hero-grid">
         <div className="hero-number-wrap">
           <span className="hero-number" data-testid="hero-percentage">
-            60.4<span className="hero-pct">%</span>
+            {lang === "fr" ? "60,4" : "60.4"}
+            <span className="hero-pct">%</span>
           </span>
           <span className="hero-number-shadow" aria-hidden="true">
-            60.4<span className="hero-pct">%</span>
+            {lang === "fr" ? "60,4" : "60.4"}
+            <span className="hero-pct">%</span>
           </span>
         </div>
-
         <div className="hero-label-wrap">
-          <span className="hero-were">were</span>
+          <span className="hero-were">{h.were}</span>
           <span className="hero-identity" data-testid="hero-label">
-            Gay Men<span className="hero-dot">.</span>
+            {h.identity}
+            <span className="hero-dot">.</span>
           </span>
           <p className="hero-explainer">
-            Of the <strong>409 performers</strong> booked across Pride Toronto 2025's
-            public lineup, <mark className="accent-mark">60.4% were Gay Men</mark> —
-            the single largest identity bloc. Lesbians, Trans performers,
-            Sapphic&nbsp;/&nbsp;Pan&nbsp;/&nbsp;Bi artists, Queer&nbsp;/&nbsp;Non-Binary folks and
-            Heterosexual allies <em>combined</em> made up just
-            <strong> 39.6%</strong>.
+            {h.explainer[0]}
+            <strong>{formatInt(409, lang)}{h.explainer[1].replace(/^\d+\s*/, " ")}</strong>
+            {h.explainer[2]}
+            <mark className="accent-mark">{h.explainer[3]}</mark>
+            {h.explainer[4]}
+            <em>{h.explainer[5]}</em>
+            {h.explainer[6]}
+            <strong>{h.explainer[7]}</strong>
+            {h.explainer[8]}
           </p>
         </div>
       </div>
@@ -114,144 +216,117 @@ function HeroStat() {
 }
 
 function SplitBar() {
+  const { t, lang } = useLang();
+  const s = t.split;
   return (
     <section className="split-section" data-testid="split-section">
-      <div className="kicker">
-        <span className="kicker-num">02</span>
-        <span className="kicker-line" />
-        <span className="kicker-text">The Split</span>
-      </div>
-
+      <Kicker num="02">{s.kicker}</Kicker>
       <h2 className="section-h">
-        Gay&nbsp;Men <em>vs.</em> Everyone&nbsp;Else.
+        {s.heading1}
+        <em>{s.heading2}</em>
+        {s.heading3}
       </h2>
 
       <div className="split-stats">
         <div className="split-stat split-stat--gm">
-          <span className="split-stat-num">60.4%</span>
-          <span className="split-stat-label">Gay Men</span>
+          <span className="split-stat-num">{formatPct(60.4, lang)}</span>
+          <span className="split-stat-label">{s.statA}</span>
         </div>
         <div className="split-stat split-stat--else">
-          <span className="split-stat-num">39.6%</span>
-          <span className="split-stat-label">Everyone Else<sup>*</sup></span>
+          <span className="split-stat-num">{formatPct(39.6, lang)}</span>
+          <span className="split-stat-label">
+            {s.statB}<sup>*</sup>
+          </span>
         </div>
       </div>
 
-      <div className="split-bar" role="img" aria-label="60.4% Gay Men versus 39.6% everyone else">
-        <div
-          className="split-seg split-seg--gm"
-          style={{ width: "60.4%" }}
-          data-testid="split-gm"
-        >
-          <span className="split-seg-inner">GAY&nbsp;MEN</span>
+      <div className="split-bar" role="img" aria-label={`${s.statA} 60.4% / ${s.statB} 39.6%`}>
+        <div className="split-seg split-seg--gm" style={{ width: "60.4%" }} data-testid="split-gm">
+          <span className="split-seg-inner">{s.labelA}</span>
         </div>
-        <div
-          className="split-seg split-seg--else"
-          style={{ width: "39.6%" }}
-          data-testid="split-else"
-        >
-          <span className="split-seg-inner">EVERYONE ELSE</span>
+        <div className="split-seg split-seg--else" style={{ width: "39.6%" }} data-testid="split-else">
+          <span className="split-seg-inner">{s.labelB}</span>
         </div>
       </div>
 
       <p className="footnote">
-        <sup>*</sup> Lesbians · Trans · Sapphic&nbsp;/&nbsp;Pan&nbsp;/&nbsp;Bi ·
-        Queer&nbsp;/&nbsp;Non-Binary · Heterosexual&nbsp;/&nbsp;N·A — <em>combined.</em>
+        {s.footnote[0]}
+        <em>{s.footnote[1]}</em>
       </p>
     </section>
   );
 }
 
 function IdentityBreakdown() {
-  const maxPct = useMemo(
-    () => Math.max(...DATA.identities.map((i) => i.pct)),
-    []
-  );
-
+  const { t, lang } = useLang();
+  const i = t.identity;
+  const maxPct = useMemo(() => Math.max(...DATA.identities.map((x) => x.pct)), []);
   return (
     <section className="identity-section" data-testid="identity-section">
-      <div className="kicker">
-        <span className="kicker-num">03</span>
-        <span className="kicker-line" />
-        <span className="kicker-text">The Full Breakdown</span>
-      </div>
-
+      <Kicker num="03">{i.kicker}</Kicker>
       <h2 className="section-h">
-        Six identity groups. <em>One stage.</em>
+        {i.heading1}
+        <em>{i.heading2}</em>
       </h2>
 
       <ul className="identity-list" data-testid="identity-list">
         {DATA.identities.map((row) => {
+          const label = i.labels[row.key];
           const barWidth = `${(row.pct / maxPct) * 100}%`;
           return (
             <li key={row.key} className="identity-row" data-testid={`identity-row-${row.key}`}>
               <div className="id-head">
                 <span className="id-chip" style={{ background: row.color }} />
-                <span className="id-label">{row.label}</span>
-                <span className="id-short">({row.short})</span>
+                <span className="id-label">{label.name}</span>
+                <span className="id-short">({label.short})</span>
               </div>
               <div className="id-bar-track">
-                <div
-                  className="id-bar-fill"
-                  style={{ width: barWidth, background: row.color }}
-                />
-                <span className="id-pct">{row.pct}%</span>
+                <div className="id-bar-fill" style={{ width: barWidth, background: row.color }} />
+                <span className="id-pct">{formatPct(row.pct, lang)}</span>
               </div>
             </li>
           );
         })}
       </ul>
 
-      <p className="footnote">
-        Some performers identify with more than one category (e.g. Queer +
-        Lesbian). Each bar represents the share of the 409-performer lineup
-        that <em>includes</em> that identity, so totals can exceed 100%. Bars are
-        scaled relative to the largest identity for visual comparison.
-      </p>
+      <p className="footnote">{i.footnote}</p>
     </section>
   );
 }
 
 function EthnicitySection() {
+  const { t, lang } = useLang();
+  const e = t.ethnicity;
   return (
     <section className="ethnicity-section" data-testid="ethnicity-section">
-      <div className="kicker">
-        <span className="kicker-num">04</span>
-        <span className="kicker-line" />
-        <span className="kicker-text">The Ethnicity Split</span>
-      </div>
-
+      <Kicker num="04">{e.kicker}</Kicker>
       <h2 className="section-h">
-        Who is on stage, <em>by ethnicity.</em>
+        {e.heading1}
+        <em>{e.heading2}</em>
       </h2>
 
-      <div className="eth-bar" role="img" aria-label="53.3% White versus 46.7% BIPOC">
-        <div
-          className="eth-seg eth-seg--white"
-          style={{ width: `${DATA.ethnicity.white}%` }}
-          data-testid="eth-white"
-        >
-          <span className="eth-seg-pct">{DATA.ethnicity.white}%</span>
-          <span className="eth-seg-label">White</span>
+      <div className="eth-bar" role="img" aria-label={`${e.white} 53.3% / ${e.bipoc} 46.7%`}>
+        <div className="eth-seg eth-seg--white" style={{ width: `${DATA.ethnicity.white}%` }} data-testid="eth-white">
+          <span className="eth-seg-pct">{formatPct(DATA.ethnicity.white, lang)}</span>
+          <span className="eth-seg-label">{e.white}</span>
         </div>
-        <div
-          className="eth-seg eth-seg--bipoc"
-          style={{ width: `${DATA.ethnicity.bipoc}%` }}
-          data-testid="eth-bipoc"
-        >
-          <span className="eth-seg-pct">{DATA.ethnicity.bipoc}%</span>
-          <span className="eth-seg-label">BIPOC</span>
+        <div className="eth-seg eth-seg--bipoc" style={{ width: `${DATA.ethnicity.bipoc}%` }} data-testid="eth-bipoc">
+          <span className="eth-seg-pct">{formatPct(DATA.ethnicity.bipoc, lang)}</span>
+          <span className="eth-seg-label">{e.bipoc}</span>
         </div>
       </div>
 
       <aside className="callout" data-testid="white-gm-callout">
-        <span className="callout-eyebrow">Most-booked identity × ethnicity</span>
+        <span className="callout-eyebrow">{e.calloutEyebrow}</span>
         <div className="callout-body">
-          <span className="callout-number">≈ 35%</span>
+          <span className="callout-number">≈ {lang === "fr" ? "35\u00a0%" : "35%"}</span>
           <p className="callout-text">
-            of the <strong>entire 409-performer lineup</strong> were
-            <strong> White Gay Men</strong>, alone — <em>more than Lesbians,
-            Trans, Sapphic and Heterosexual women combined.</em>
+            {e.calloutText[0]}
+            <strong>{e.calloutText[1]}</strong>
+            {e.calloutText[2]}
+            <strong>{e.calloutText[3]}</strong>
+            {e.calloutText[4]}
+            <em>{e.calloutText[5]}</em>
           </p>
         </div>
       </aside>
@@ -259,34 +334,84 @@ function EthnicitySection() {
   );
 }
 
-function MissionSection() {
+function MethodologySection() {
+  const { t } = useLang();
+  const m = t.methodology;
   return (
-    <section className="mission-section" data-testid="mission-section">
-      <div className="kicker">
-        <span className="kicker-num">05</span>
-        <span className="kicker-line" />
-        <span className="kicker-text">Why This Matters</span>
+    <section className="methodology-section" data-testid="methodology-section">
+      <Kicker num="05">{m.kicker}</Kicker>
+      <h2 className="section-h">
+        {m.heading1}
+        <em>{m.heading2}</em>
+      </h2>
+
+      <p className="methodology-intro">{m.intro}</p>
+
+      <div className="methodology-grid">
+        {m.sections.map((sec, idx) => (
+          <article
+            key={sec.num}
+            className="method-card"
+            data-testid={`method-card-${sec.num.toLowerCase()}`}
+          >
+            <header className="method-head">
+              <span className="method-num">{sec.num}</span>
+              <h3 className="method-title">{sec.title}</h3>
+            </header>
+            <p className="method-body">{sec.body}</p>
+          </article>
+        ))}
       </div>
 
+      <div className="sources" data-testid="sources">
+        <h4 className="sources-title">{m.sources.title}</h4>
+        <ul className="sources-list">
+          {m.sources.items.map((line, idx) => (
+            <li key={idx}>{line}</li>
+          ))}
+        </ul>
+      </div>
+
+      <p className="corrections">
+        <span className="corrections-label">{m.corrections.label}.</span>{" "}
+        {m.corrections.text}
+        <a href="mailto:info@wearelcv.ca" className="corrections-email">
+          {m.corrections.emailLabel}
+        </a>
+        .
+      </p>
+    </section>
+  );
+}
+
+function MissionSection() {
+  const { t } = useLang();
+  const m = t.mission;
+  return (
+    <section className="mission-section" data-testid="mission-section">
+      <Kicker num="06">{m.kicker}</Kicker>
       <div className="mission-grid">
         <div className="mission-copy">
           <h3 className="mission-h">
-            About <em>We Are LCV</em>.
+            {m.heading1}
+            <em>{m.heading2}</em>.
           </h3>
           <p className="mission-p">
-            LCV celebrates the rich diversity of <strong>lesbian creatives</strong> across
-            all artistic fields, with a focus on the arts, dance, music,
-            fashion, and beauty+ industries. Our mission is to
-            <strong> amplify talent</strong>,
-            <strong> break stereotypes</strong>, and
-            <strong> unite the community</strong> through impactful events.
+            {m.body[0]}
+            <strong>{m.body[1]}</strong>
+            {m.body[2]}
+            <strong>{m.body[3]}</strong>
+            {m.body[4]}
+            <strong>{m.body[5]}</strong>
+            {m.body[6]}
+            <strong>{m.body[7]}</strong>
+            {m.body[8]}
           </p>
         </div>
-
         <aside className="mission-mark" aria-hidden="true">
-          <span className="mark-label">Audit by</span>
+          <span className="mark-label">{m.markLabel}</span>
           <span className="mark-word">LCV</span>
-          <span className="mark-handle">@wearelcv</span>
+          <span className="mark-handle">{m.markHandle}</span>
         </aside>
       </div>
     </section>
@@ -294,42 +419,26 @@ function MissionSection() {
 }
 
 function ContactBar() {
+  const { t } = useLang();
+  const c = t.contact;
   const { instagram, facebook, email } = DATA.links;
   return (
     <section className="contact-bar" data-testid="contact-bar">
       <div className="contact-item">
-        <span className="c-label">Instagram</span>
-        <a
-          className="c-link"
-          href={instagram.url}
-          target="_blank"
-          rel="noreferrer"
-          data-testid="link-instagram"
-        >
+        <span className="c-label">{c.instagram}</span>
+        <a className="c-link" href={instagram.url} target="_blank" rel="noreferrer" data-testid="link-instagram">
           {instagram.handle}
         </a>
       </div>
-      <span className="contact-div" aria-hidden="true" />
       <div className="contact-item">
-        <span className="c-label">Facebook</span>
-        <a
-          className="c-link"
-          href={facebook.url}
-          target="_blank"
-          rel="noreferrer"
-          data-testid="link-facebook"
-        >
+        <span className="c-label">{c.facebook}</span>
+        <a className="c-link" href={facebook.url} target="_blank" rel="noreferrer" data-testid="link-facebook">
           {facebook.handle}
         </a>
       </div>
-      <span className="contact-div" aria-hidden="true" />
       <div className="contact-item">
-        <span className="c-label">Email</span>
-        <a
-          className="c-link"
-          href={email.url}
-          data-testid="link-email"
-        >
+        <span className="c-label">{c.email}</span>
+        <a className="c-link" href={email.url} data-testid="link-email">
           {email.handle}
         </a>
       </div>
@@ -338,51 +447,158 @@ function ContactBar() {
 }
 
 function Disclaimer() {
+  const { t } = useLang();
+  const d = t.disclaimer;
   return (
     <footer className="disclaimer" data-testid="disclaimer">
       <p className="disclaimer-text">
-        <strong>Disclaimer.</strong> Independent community audit by We Are LCV.
-        Not affiliated with or funded by Pride Toronto. Data compiled from
-        public 2025 lineup announcements. Pride Toronto removed their 2025
-        lineup page on May&nbsp;1,&nbsp;2025.
+        <strong>{d.label}</strong>
+        {d.body}
       </p>
-      <p className="copyright">
-        © 2025 We Are LCV · All rights reserved.
-      </p>
+      <p className="copyright">{d.copyright}</p>
     </footer>
   );
 }
 
-const Home = () => {
+/* -------------------------------------------------------------------------- */
+/*  Full Audit page                                                           */
+/* -------------------------------------------------------------------------- */
+
+const FullAuditPage = React.forwardRef(function FullAuditPage(_props, ref) {
+  return (
+    <main className="magazine" ref={ref} data-testid="magazine">
+      <Masthead />
+      <HeroStat />
+      <SplitBar />
+      <IdentityBreakdown />
+      <EthnicitySection />
+      <MethodologySection />
+      <MissionSection />
+      <ContactBar />
+      <Disclaimer />
+    </main>
+  );
+});
+
+/* -------------------------------------------------------------------------- */
+/*  Story page  (renders StoryCard at native 1080x1920 with scale-to-fit)     */
+/* -------------------------------------------------------------------------- */
+
+function StoryPage({ storyRef }) {
+  const { t, lang } = useLang();
+  const wrapRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  const recompute = useCallback(() => {
+    if (!wrapRef.current) return;
+    const { clientWidth, clientHeight } = wrapRef.current;
+    const sx = clientWidth / STORY_WIDTH;
+    const sy = clientHeight / STORY_HEIGHT;
+    setScale(Math.min(sx, sy, 1));
+  }, []);
+
+  useEffect(() => {
+    recompute();
+    window.addEventListener("resize", recompute);
+    return () => window.removeEventListener("resize", recompute);
+  }, [recompute]);
+
+  return (
+    <main className="story-page" data-testid="story-page">
+      <div className="story-meta">
+        <span className="story-meta-label">IG STORY · 1080 × 1920</span>
+        <span className="story-meta-dim">
+          {lang === "fr"
+            ? "Aperçu mis à l'échelle · le téléchargement est à la taille native."
+            : "Preview is scaled · PNG downloads at native size."}
+        </span>
+      </div>
+      <div className="story-stage" ref={wrapRef}>
+        <div
+          className="story-scale"
+          style={{
+            width: STORY_WIDTH,
+            height: STORY_HEIGHT,
+            transform: `translate(-50%, -50%) scale(${scale})`,
+          }}
+        >
+          <StoryCard t={t} locale={lang} ref={storyRef} />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Shell — mounts toolbar + routes + manages PNG download                    */
+/* -------------------------------------------------------------------------- */
+
+function AppShell() {
+  const { pathname } = useLocation();
+  const fullRef = useRef(null);
+  const storyRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+
   useEffect(() => {
     document.body.classList.add("lcv-body");
     return () => document.body.classList.remove("lcv-body");
   }, []);
 
+  const handleDownload = useCallback(async () => {
+    const isStory = pathname.startsWith("/story");
+    const node = isStory ? storyRef.current : fullRef.current;
+    if (!node) return;
+    setDownloading(true);
+    try {
+      const filename = isStory
+        ? "we-are-lcv-booking-gap-story-1080x1920.png"
+        : "we-are-lcv-booking-gap-full-audit.png";
+
+      const opts = {
+        cacheBust: true,
+        pixelRatio: isStory ? 1 : 2,
+        backgroundColor: "#292929",
+        style: { transform: "none" },
+      };
+      if (isStory) {
+        opts.width = STORY_WIDTH;
+        opts.height = STORY_HEIGHT;
+      }
+
+      const dataUrl = await toPng(node, opts);
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("PNG export failed:", err);
+      alert(`Sorry — PNG export failed: ${err && err.message ? err.message : err}`);
+    } finally {
+      setDownloading(false);
+    }
+  }, [pathname]);
+
   return (
     <div className="page" data-testid="page-root">
       <div className="grain" aria-hidden="true" />
-      <main className="magazine">
-        <Masthead />
-        <HeroStat />
-        <SplitBar />
-        <IdentityBreakdown />
-        <EthnicitySection />
-        <MissionSection />
-        <ContactBar />
-        <Disclaimer />
-      </main>
+      <Toolbar onDownload={handleDownload} downloading={downloading} />
+      <Routes>
+        <Route path="/" element={<FullAuditPage ref={fullRef} />} />
+        <Route path="/story" element={<StoryPage storyRef={storyRef} />} />
+        <Route path="*" element={<FullAuditPage ref={fullRef} />} />
+      </Routes>
     </div>
   );
-};
+}
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-        </Routes>
+        <LangProvider>
+          <AppShell />
+        </LangProvider>
       </BrowserRouter>
     </div>
   );

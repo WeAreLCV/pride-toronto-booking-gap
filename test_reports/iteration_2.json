@@ -1,0 +1,55 @@
+{
+  "summary": "Completed comprehensive frontend testing for Pride Toronto 2025 'The Booking Gap' Phase 2 features. All 4 new features (bilingual EN/FR toggle, IG Story format at /story, Download PNG, expanded Methodology section) are working correctly. All previous Phase 1 elements verified and functional. Responsive behavior tested across mobile/tablet/desktop viewports.",
+  "backend_issues": {
+    "critical_bugs": [],
+    "flaky_endpoints": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "minor_notes": [
+      {
+        "component": "html-to-image library",
+        "issue": "Console errors when downloading PNG due to CORS restrictions on Google Fonts CSS inlining",
+        "impact": "Does not affect functionality - downloads work correctly. This is expected behavior with external font stylesheets.",
+        "fix_priority": "LOW"
+      }
+    ]
+  },
+  "passed_tests": [
+    "Toolbar is sticky at top with position:sticky, z-index:50, always visible on scroll",
+    "All toolbar buttons present: lang-en, lang-fr, view-full, view-story, download-png",
+    "Language toggle EN→FR: masthead title changes to 'L'Écart de Programmation', all section kickers translate correctly (La Manchette, La Division, La Répartition Complète, La Division Ethnique, Méthodologie & Contexte, Pourquoi Ça Compte)",
+    "French percentages use comma format with non-breaking space (60,4 %)",
+    "French identity labels localize correctly (Homme gai, Queer / Non binaire, Trans, Lesbienne, Hétérosexuel / S·O, Saphique / Pan / Bi)",
+    "Language toggle FR→EN restores English text correctly",
+    "Language preference persists in localStorage (key 'lcv-lang') and survives page reload",
+    "View toggle [data-testid=view-story] navigates to /story route (URL changes)",
+    "View toggle [data-testid=view-full] navigates back to / route",
+    "Story page [data-testid=story-page] renders with 'IG STORY · 1080 × 1920' label",
+    "Story card [data-testid=story-card] has correct native dimensions (1080x1920)",
+    "Story card contains: title 'The Booking Gap.', 60.4% hero, Gay Men/Everyone Else split stats, six identity rows, ethnicity bar (White 53.3 / BIPOC 46.7), ≈35% callout, @wearelcv footer",
+    "Methodology section [data-testid=methodology-section] kicker is '05 — Methodology & Context' (EN)",
+    "Three methodology cards present: method-card-a (mentions 'Affiliate Event Program'), method-card-b (mentions '$1.85M' and 'KPMG'), method-card-c (mentions 'booking fees' and 'transparency')",
+    "Sources block [data-testid=sources] lists 4 items",
+    "Corrections paragraph has mailto:info@wearelcv.ca link",
+    "Mission section [data-testid=mission-section] kicker is '06 — Why This Matters' (updated from 05 in phase 1)",
+    "All phase 1 data-testid elements verified: hero-stat, hero-percentage (60.4), split-section, identity-list with 6 rows (identity-row-gm, -qnb, -t, -l, -h, -sap), eth-white, eth-bipoc, white-gm-callout, contact-bar, disclaimer",
+    "Download PNG button [data-testid=download-png] is clickable on full audit page, initiates download of 'we-are-lcv-booking-gap-full-audit.png'",
+    "Download PNG button on /story page initiates download of 'we-are-lcv-booking-gap-story-1080x1920.png'",
+    "No JavaScript errors on initial load, language switch, route switch to /story, or download button click (only expected CORS warnings from html-to-image)",
+    "Responsive mobile (390x844): toolbar accessible, lang toggle + view toggle + download work, no horizontal scroll, methodology grid stacks to 1 column, story page visible",
+    "Responsive tablet (768x1024): all sections readable, methodology may be 1 column",
+    "Responsive desktop (1440x900): methodology is 3-column grid (332px each), hero grid is 2-column (1.15fr 1fr ratio)"
+  ],
+  "test_report_links": [],
+  "action_item_for_main_agent": "",
+  "updated_files": [],
+  "success_percentage": {
+    "frontend": "100%",
+    "backend": "N/A (frontend-only app)"
+  },
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": false
+}
