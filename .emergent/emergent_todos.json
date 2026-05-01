@@ -12,7 +12,7 @@
     "status": "completed"
   },
   {
-    "content": "Parse 409-performer list to structured JSON (421 rows incl. group splits)",
+    "content": "Parse 409-performer list to structured JSON (421 rows)",
     "status": "completed"
   },
   {
@@ -20,7 +20,7 @@
     "status": "completed"
   },
   {
-    "content": "Test all 4 features via testing_agent_v3",
-    "status": "in_progress"
+    "content": "Test all 4 features via testing_agent_v3 — 100% pass",
+    "status": "completed"
   }
 ]
